@@ -4,9 +4,9 @@
  */
 package fr.urlshortener.DAO;
 
-import fr.urlshortener.DAO.pattern.ConnectInterface;
-import fr.urlshortener.DAO.pattern.CrudInterface;
-import fr.urlshortener.DAO.pattern.QueryInterface;
+import fr.urlshortener.DAO.interfaces.ConnectInterface;
+import fr.urlshortener.DAO.interfaces.CrudInterface;
+import fr.urlshortener.DAO.interfaces.QueryInterface;
 
 /**
  *
