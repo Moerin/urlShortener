@@ -8,6 +8,7 @@ import fr.urlshortener.DAO.DAO;
 import fr.urlshortener.DAO.pattern.ConnectInterface;
 import fr.urlshortener.DAO.pattern.QueryInterface;
 import fr.urlshortener.bean.Data;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -35,6 +36,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     private String key; /* TODO : la valeur doit etre changé
      dans la base de donnée */
     // Nom de l'index du node
+
     private String index;
     // Log Slf4j
     private Logger logger = LoggerFactory.getLogger(GraphDAO.class);
@@ -133,7 +135,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     }
 
     public void delete(Data obj) {
-        
+
         Transaction tx = graphDb.beginTx();
         try {
             // Recherche du node par id et supression
@@ -167,7 +169,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         System.out.println("Base de donnée initialisé");
         // Recuperation d'un node index avec "nodes" comme nom (deja present dans la base de donnée)
         this.nodeIndex = graphDb.index().forNodes(index);
-        
+
     }
 
     /**
@@ -180,7 +182,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     }
 
     /**
-     * Recherche l'id de la donnée, utilise un index pour trouver la donnée ne
+     * Recherche l'id de la donnée, utilise un index pour trouver la donnée, ne
      * fonctionne pas pour l'instant sans que la base de donnée posséde un index
      *
      * @param obj1
@@ -188,7 +190,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      * @return Data
      */
     public Data querySingle(Object obj1, Object obj2) {
-       Data data = new Data();
+        Data data = new Data();
 
         Transaction tx = graphDb.beginTx();
         // C'est une chaine
@@ -210,12 +212,40 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         return data;
     }
 
+    /**
+     *
+     * @param obj1
+     * @param obj2
+     * @return
+     */
     public Set<Data> querySet(Object obj1, Object obj2) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        // HashSet qui verife que les elements sont bien uniques
+        Set<Data> setData = new HashSet<Data>();
+        
+        Transaction tx = graphDb.beginTx();
+        
+        IndexHits<Node> hits = nodeIndex.get((String) obj1, (String) obj2);
+        try {
+            for (Node node : hits){
+                Data data = new Data();
+                data.setValue((String) node.getProperty(key));
+                setData.add(data);
+            }
+            // Signale que la transaction a reussi
+            tx.success();
+        } catch (Exception e) {
+            logger.warn("Query : querySet failed");
+            System.err.println("Query : querySet failed");
+            // Signale que la transaction a été un echec
+            tx.failure(); // A VERIFIER SI CETTE LIGNE DE CODE EST UTILE
+        } finally {
+            // Cloture la transaction
+            hits.close();
+            tx.finish();
+        }
+        return setData;
     }
-
 //    public void restart() { Comment cela fonctionne t'il?
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 //    }
-    
 }
