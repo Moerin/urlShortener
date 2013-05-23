@@ -32,7 +32,8 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     private String dbPath;
     // Creation d'une instance Neo4j
     private GraphDatabaseService graphDb = null;
-    // Creation de l'index de node
+    // Creation d'une liste d'index
+    List<Index> indexList = new ArrayList<Index>();
     private Index<Node> nodeIndex;
     // Nom de la propriete du node
     private String key; /* TODO : la valeur doit etre changé
@@ -51,6 +52,31 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      */
     public GraphDAO(Configuration config) {
         this.dbPath = config.getPath();
+    }
+    
+     /**
+     * Initialise la base de donnée
+     */
+    public void start() {
+        // Démarrage du serveur avec le path en propriété
+        this.graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
+        System.out.println("Base de donnée initialisé");
+        // Recuperation d'un node index avec "nodes" comme nom (deja present dans la base de donnée)
+        this.nodeIndex = graphDb.index().forNodes(index);
+        String[] str = graphDb.index().nodeIndexNames();
+        // Creation d'une liste d'index
+        for(String indStr : str){
+            this.indexList.add(new GraphDatabaseFactory().newEmbeddedDatabase(dbPath).index().forNodes(indStr));
+        }
+    }
+
+    /**
+     * Ferme la base de donnée
+     */
+    public void stop() {
+        // Fermeture de l'instance
+        this.graphDb.shutdown();
+        System.out.println("Fermeture de la base de donnée");
     }
 
     /**
@@ -118,7 +144,6 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             // Cloture la transaction
             tx.finish();
         }
-
     }
 
     public void delete(Data obj) {
@@ -145,27 +170,6 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             // Cloture la transaction
             tx.finish();
         }
-    }
-
-    /**
-     * Initialise la base de donnée
-     */
-    public void start() {
-        // Démarrage du serveur avec le path en propriété
-        this.graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
-        System.out.println("Base de donnée initialisé");
-        // Recuperation d'un node index avec "nodes" comme nom (deja present dans la base de donnée)
-        this.nodeIndex = graphDb.index().forNodes(index);
-        graphDb.index().nodeIndexNames();
-    }
-
-    /**
-     * Ferme la base de donnée
-     */
-    public void stop() {
-        // Fermeture de l'instance
-        this.graphDb.shutdown();
-        System.out.println("Fermeture de la base de donnée");
     }
 
     /**
