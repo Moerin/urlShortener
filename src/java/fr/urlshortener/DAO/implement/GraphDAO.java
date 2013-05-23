@@ -220,7 +220,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      */
     public Set<Data> querySet(Object obj1, Object obj2) {
         // HashSet qui verife que les elements sont bien uniques
-        Set<Data> setData = new HashSet<Data>();
+        Set<Data> setData = new HashSet<Data>(); // changer par un Arraylist
         
         Transaction tx = graphDb.beginTx();
         

@@ -11,7 +11,7 @@ import java.io.Serializable;
  * @author Sebastien
  */
 public class Data implements Serializable {
-    
+    // Penser aux differentes propriete qui peuvent etre integres
     private long id;
     private String value;
 
@@ -33,7 +33,5 @@ public class Data implements Serializable {
     public void setValue(String value) {
         this.value = value;
     }
-    
-    
     
 }

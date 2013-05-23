@@ -12,19 +12,9 @@ import java.util.Set;
  */
 public interface QueryInterface<T> {
     
-    /**
-     * 
-     * @param obj
-     * @param obj
-     * @return data
-     */
+    
     public T querySingle(Object obj1, Object obj2); // TODO : developper cette methode pour qu'elle permette de gerer les requetes particulieres
     
-    /**
-     * 
-     * @param obj1
-     * @param obj2
-     * @return set<Data>
-     */
+    
     public Set<T> querySet(Object obj1, Object obj2);
 }

@@ -10,4 +10,6 @@ package fr.urlshortener.configuration;
  */
 public class Configuration {
     
+    
+    
 }
