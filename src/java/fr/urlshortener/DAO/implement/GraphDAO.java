@@ -5,11 +5,13 @@
 package fr.urlshortener.DAO.implement;
 
 import fr.urlshortener.DAO.DAO;
-import fr.urlshortener.DAO.pattern.ConnectInterface;
-import fr.urlshortener.DAO.pattern.QueryInterface;
+import fr.urlshortener.DAO.interfaces.ConnectInterface;
+import fr.urlshortener.DAO.interfaces.QueryInterface;
 import fr.urlshortener.bean.Data;
-import java.util.HashSet;
-import java.util.Set;
+import fr.urlshortener.configuration.Configuration;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -36,7 +38,6 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     private String key; /* TODO : la valeur doit etre changé
      dans la base de donnée */
     // Nom de l'index du node
-
     private String index;
     // Log Slf4j
     private Logger logger = LoggerFactory.getLogger(GraphDAO.class);
@@ -48,22 +49,8 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      * @param key
      * @param index
      */
-    public GraphDAO(final String dbPath, final String key) {
-        this.dbPath = dbPath;
-        this.key = key;
-    }
-
-    /**
-     * Constructeur avec Index
-     *
-     * @param dbPath
-     * @param key
-     * @param index
-     */
-    public GraphDAO(final String dbPath, final String key, final String index) {
-        this.dbPath = dbPath;
-        this.key = key;
-        this.index = index;
+    public GraphDAO(Configuration config) {
+        this.dbPath = config.getPath();
     }
 
     /**
@@ -81,7 +68,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             data.setValue(String.valueOf(node.getProperty(key)));
             // Signale que la transaction a reussi
             tx.success();
-        } catch (Exception e) {
+        } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : find failed");
             System.err.println("Node : find failed");
             tx.failure(); // A VERIFIER SI CETTE LIGNE DE CODE EST UTILE
@@ -103,7 +90,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             data.setValue(String.valueOf(newNode.getProperty(key)));
             nodeIndex.add(newNode, key, newNode.getProperty(key));
             tx.success();
-        } catch (Exception e) {
+        } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : Creation failed");
             System.err.println("Node : Creation failed");
             // Signale que la transaction a ete un echec
@@ -122,7 +109,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             Node newNode = graphDb.getNodeById(obj.getId());
             newNode.setProperty(key, obj.getValue());
             tx.success();
-        } catch (Exception e) {
+        } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : Update failed");
             System.err.println("Node : Update failed");
             // Signale que la transaction a ete un echec
@@ -149,7 +136,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
                 newNode.delete();
             }
             tx.success();
-        } catch (Exception e) {
+        } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : Delete failed");
             System.err.println("Node : Delete failed");
             // Signale que la transaction a ete un echec
@@ -169,7 +156,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         System.out.println("Base de donnée initialisé");
         // Recuperation d'un node index avec "nodes" comme nom (deja present dans la base de donnée)
         this.nodeIndex = graphDb.index().forNodes(index);
-
+        graphDb.index().nodeIndexNames();
     }
 
     /**
@@ -189,13 +176,13 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      * @param obj2
      * @return Data
      */
-    public Data querySingle(Object obj1, Object obj2) {
+    public Data querySingle(String obj1, String obj2) {
         Data data = new Data();
 
         Transaction tx = graphDb.beginTx();
         // C'est une chaine
         try {
-            IndexHits<Node> hits = nodeIndex.get((String) obj1, (String) obj2);
+            IndexHits<Node> hits = nodeIndex.get(obj1, obj2);
             Node node = hits.getSingle();
             data.setId(node.getId());
             // Signale que la transaction a reussi
@@ -218,18 +205,18 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      * @param obj2
      * @return
      */
-    public Set<Data> querySet(Object obj1, Object obj2) {
-        // HashSet qui verife que les elements sont bien uniques
-        Set<Data> setData = new HashSet<Data>(); // changer par un Arraylist
-        
+    public List<Data> querySet(String obj1, String obj2) {
+        // ArrayList synchroniwed pour eviter les problemes en cas de multithreading 
+        List<Data> listData = Collections.synchronizedList(new ArrayList<Data>());
+
         Transaction tx = graphDb.beginTx();
-        
-        IndexHits<Node> hits = nodeIndex.get((String) obj1, (String) obj2);
+
+        IndexHits<Node> hits = nodeIndex.get(obj1, obj2);
         try {
-            for (Node node : hits){
+            for (Node node : hits) {
                 Data data = new Data();
                 data.setValue((String) node.getProperty(key));
-                setData.add(data);
+                listData.add(data);
             }
             // Signale que la transaction a reussi
             tx.success();
@@ -243,9 +230,9 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             hits.close();
             tx.finish();
         }
-        return setData;
+        return listData;
     }
-//    public void restart() { Comment cela fonctionne t'il?
+    //    public void restart() { Comment cela fonctionne t'il?
 //        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 //    }
 }
