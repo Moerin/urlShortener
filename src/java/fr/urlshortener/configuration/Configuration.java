@@ -10,6 +10,14 @@ package fr.urlshortener.configuration;
  */
 public class Configuration {
     
-    
+    private String path;
+
+    public Configuration(String path) { // TODO : Ou passer par un objet Data?
+        this.path = path;
+    }
+
+    public String getPath() {
+        return path;
+    }
     
 }
