@@ -9,6 +9,8 @@ import fr.urlshortener.DAO.interfaces.ConnectInterface;
 import fr.urlshortener.DAO.interfaces.QueryInterface;
 import fr.urlshortener.bean.Data;
 import fr.urlshortener.configuration.Configuration;
+import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +37,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     // Creation d'une instance Neo4j
     private GraphDatabaseService graphDb = null;
     // Creation d'une liste d'index
-    //List<Index> indexList = new ArrayList<Index>();
+    //List<Index> indexList = new ArrayList<Index>(); TODO : verifier leur utilité
 //    private static Map<String, Index> indexMap = new HashMap<String, Index>();
     private Index<Node> nodeIndex;
     // Nom de la propriete du node
@@ -45,28 +47,49 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     private String index;
     // Log Slf4j
     private Logger logger = LoggerFactory.getLogger(GraphDAO.class);
-
+    
     /**
      * Constructeur par defaut
      *
      * @param dbPath
      * @param key
-     * @param index
+     *
      */
     public GraphDAO(Configuration config) {
-        this.dbPath = config.getPath();
-        this.index = config.getIndex();
+        if (!config.getPath().isEmpty()) {
+            this.dbPath = config.getPath();
+            try {
+                File filePath = new File(dbPath);
+                if (!filePath.exists()) {
+                    filePath.mkdirs();
+                    logger.info("Database will be created under {} path", this.dbPath);
+                }
+            } catch (SecurityException se) {
+                logger.error("Writing is denied under {} path", this.dbPath);
+                logger.info("A default database will be created under {} path", System.getenv("HOME") + File.separator + "defaultBase");
+                this.dbPath = System.getenv("HOME") + File.separator + "defaultBase";
+                File defaultPath = new File(dbPath);
+                defaultPath.mkdirs();
+            }
+        } else {
+            this.dbPath = config.getURI();
+        }
     }
-    
-     /**
+
+    /**
      * Initialise la base de donnée
      */
     public void start() {
         // Démarrage du serveur avec le path en propriété
         this.graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
         System.out.println("Base de donnée initialisé");
-        // Recuperation d'un node index avec "nodes" comme nom (deja present dans la base de donnée)
-        this.nodeIndex = graphDb.index().forNodes(index);
+        // Recupere les "Fields" du java bean et contruits des indexs dynamiquement
+        Field[] fields = Data.class.getFields();
+        for(Field field : fields){
+            graphDb.index().forNodes(field.getName());
+        }
+          // Version pour valoriser un string      
+          this.nodeIndex = graphDb.index().forNodes(index);
 //        String[] str = graphDb.index().nodeIndexNames();
 //        // Creation d'une liste d'index
 //        for(String indStr : str){
