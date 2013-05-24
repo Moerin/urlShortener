@@ -11,7 +11,9 @@ import fr.urlshortener.bean.Data;
 import fr.urlshortener.configuration.Configuration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -33,7 +35,8 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     // Creation d'une instance Neo4j
     private GraphDatabaseService graphDb = null;
     // Creation d'une liste d'index
-    List<Index> indexList = new ArrayList<Index>();
+    //List<Index> indexList = new ArrayList<Index>();
+//    private static Map<String, Index> indexMap = new HashMap<String, Index>();
     private Index<Node> nodeIndex;
     // Nom de la propriete du node
     private String key; /* TODO : la valeur doit etre changé
@@ -52,6 +55,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      */
     public GraphDAO(Configuration config) {
         this.dbPath = config.getPath();
+        this.index = config.getIndex();
     }
     
      /**
@@ -63,11 +67,12 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         System.out.println("Base de donnée initialisé");
         // Recuperation d'un node index avec "nodes" comme nom (deja present dans la base de donnée)
         this.nodeIndex = graphDb.index().forNodes(index);
-        String[] str = graphDb.index().nodeIndexNames();
-        // Creation d'une liste d'index
-        for(String indStr : str){
-            this.indexList.add(new GraphDatabaseFactory().newEmbeddedDatabase(dbPath).index().forNodes(indStr));
-        }
+//        String[] str = graphDb.index().nodeIndexNames();
+//        // Creation d'une liste d'index
+//        for(String indStr : str){
+//            //this.indexList.add(new GraphDatabaseFactory().newEmbeddedDatabase(dbPath).index().forNodes(indStr));
+//            this.indexMap.put(indStr, new GraphDatabaseFactory().newEmbeddedDatabase(dbPath).index().forNodes(indStr));
+//        }
     }
 
     /**
