@@ -9,6 +9,8 @@ import fr.urlshortener.DAO.interfaces.ConnectInterface;
 import fr.urlshortener.DAO.interfaces.QueryInterface;
 import fr.urlshortener.bean.Data;
 import fr.urlshortener.configuration.Configuration;
+import fr.urlshortener.populate.Populate;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +38,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     // Path de la base de donnée
     private String dbPath;
     // Creation d'une instance Neo4j
-    private GraphDatabaseService graphDb = null;
+    private GraphDatabaseService graphDb;
     // Creation d'une liste d'index
     //List<Index> indexList = new ArrayList<Index>(); TODO : verifier leur utilité
 //    private static Map<String, Index> indexMap = new HashMap<String, Index>();
@@ -47,7 +50,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     private String index;
     // Log Slf4j
     private Logger logger = LoggerFactory.getLogger(GraphDAO.class);
-    
+
     /**
      * Constructeur par defaut
      *
@@ -83,13 +86,18 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         // Démarrage du serveur avec le path en propriété
         this.graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
         System.out.println("Base de donnée initialisé");
-        // Recupere les "Fields" du java bean et contruits des indexs dynamiquement
+        // Recupere les "Fields" du java bean et contruits des index dynamiquement
         Field[] fields = Data.class.getFields();
-        for(Field field : fields){
+        for (Field field : fields) {
             graphDb.index().forNodes(field.getName());
+            // Si ils n'existent pas on les créent
+            if (!graphDb.index().existsForNodes(field.getName())) { // TODO : a tester toutes cette partie!!
+                Populate pop = new Populate(graphDb, field.getName());
+                pop.populate();
+            }
         }
-          // Version pour valoriser un string      
-          this.nodeIndex = graphDb.index().forNodes(index);
+        // Version pour valoriser un string      
+        this.nodeIndex = graphDb.index().forNodes(index);
 //        String[] str = graphDb.index().nodeIndexNames();
 //        // Creation d'une liste d'index
 //        for(String indStr : str){
@@ -116,9 +124,9 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     public Data find(long id) {
         Data data = new Data();
 
-        Transaction tx = graphDb.beginTx();
+        Transaction tx = this.graphDb.beginTx();
         try {
-            Node node = graphDb.getNodeById(id);
+            Node node = this.graphDb.getNodeById(id);
             data.setValue(String.valueOf(node.getProperty(key)));
             // Signale que la transaction a reussi
             tx.success();
@@ -237,8 +245,8 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      * @param obj2
      * @return
      */
-    public List<Data> querySet(String obj1, String obj2) {
-        // ArrayList synchroniwed pour eviter les problemes en cas de multithreading 
+    public List<Data> queryList(String obj1, String obj2) {
+        // ArrayList synchronized pour eviter les problemes en cas de multithreading 
         List<Data> listData = Collections.synchronizedList(new ArrayList<Data>());
 
         Transaction tx = graphDb.beginTx();
@@ -253,8 +261,8 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             // Signale que la transaction a reussi
             tx.success();
         } catch (Exception e) {
-            logger.warn("Query : querySet failed");
-            System.err.println("Query : querySet failed");
+            logger.warn("Query : queryList failed");
+            System.err.println("Query : queryList failed");
             // Signale que la transaction a été un echec
             tx.failure(); // A VERIFIER SI CETTE LIGNE DE CODE EST UTILE
         } finally {
