@@ -26,5 +26,5 @@ public interface QueryInterface<T> {
      * @param obj2
      * @return set<Data>
      */
-    public List<T> querySet(String obj1, String obj2);
+    public List<T> queryList(String obj1, String obj2);
 }
