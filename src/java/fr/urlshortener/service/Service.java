@@ -6,11 +6,11 @@ package fr.urlshortener.service;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
+
 import org.vostok.management.annotations.MBean;
-import org.vostok.management.mbean.MBeanFactory;
 
 /**
  *
