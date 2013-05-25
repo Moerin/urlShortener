@@ -4,10 +4,6 @@
  */
 package fr.urlshortener.configuration;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +16,9 @@ public class Configuration {
     private String path;
     private String URI;
     
-    private boolean fileExist = false;
+//    private boolean fileExist = false;
     
-    Logger logger = LoggerFactory.getLogger(Configuration.class);
+//    Logger logger = LoggerFactory.getLogger(Configuration.class);
     
     /**
      * Constructeur utilise pour creer une configuration local
@@ -50,7 +46,6 @@ public class Configuration {
     public void setURI(String URI) {
         this.URI = URI;
     }
-    
     
     public String getPath() {
         return path;
