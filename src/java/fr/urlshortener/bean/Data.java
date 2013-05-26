@@ -5,6 +5,7 @@
 package fr.urlshortener.bean;
 
 import java.io.Serializable;
+import org.vostok.management.annotations.MBean;
 
 /**
  *

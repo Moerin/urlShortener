@@ -47,7 +47,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     private String key; /* TODO : la valeur doit etre changé
      dans la base de donnée */
     // Nom de l'index du node
-    private String index;
+    private String index = "nodes";
     // Log Slf4j
     private Logger logger = LoggerFactory.getLogger(GraphDAO.class);
 
@@ -87,15 +87,15 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         this.graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
         System.out.println("Base de donnée initialisé");
         // Recupere les "Fields" du java bean et contruits des index dynamiquement
-        Field[] fields = Data.class.getFields();
-        for (Field field : fields) {
-            graphDb.index().forNodes(field.getName());
-            // Si ils n'existent pas on les créent
-            if (!graphDb.index().existsForNodes(field.getName())) { // TODO : a tester toutes cette partie!!
-                Populate pop = new Populate(graphDb, field.getName());
-                pop.populate();
-            }
-        }
+//        Field[] fields = Data.class.getFields();
+//        for (Field field : fields) {
+//            graphDb.index().forNodes(field.getName());
+//            // Si ils n'existent pas on les créent
+//            if (!graphDb.index().existsForNodes(field.getName())) { // TODO : a tester toutes cette partie!!
+//                Populate pop = new Populate(graphDb, field.getName());
+//                pop.populate();
+//            }
+//        }
         // Version pour valoriser un string      
         this.nodeIndex = graphDb.index().forNodes(index);
 //        String[] str = graphDb.index().nodeIndexNames();
@@ -212,17 +212,17 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      * Recherche l'id de la donnée, utilise un index pour trouver la donnée, ne
      * fonctionne pas pour l'instant sans que la base de donnée posséde un index
      *
-     * @param obj1
-     * @param obj2
+     * @param name
+     * @param value
      * @return Data
      */
-    public Data querySingle(String obj1, String obj2) {
+    public Data querySingle(String name, String value) {
         Data data = new Data();
 
         Transaction tx = graphDb.beginTx();
         // C'est une chaine
         try {
-            IndexHits<Node> hits = nodeIndex.get(obj1, obj2);
+            IndexHits<Node> hits = nodeIndex.get(name, value);
             Node node = hits.getSingle();
             data.setId(node.getId());
             // Signale que la transaction a reussi
