@@ -12,8 +12,6 @@
         <title>JSP Page</title>
     </head>
     <body>
-        <h1>Hello World!</h1>
-        <%--<jsp:useBean id="service" class="fr.urlshortener.service.Service" />--%>
-        <span>${test}</span>
+        <h1>UrlShortener Service</h1>
     </body>
 </html>
