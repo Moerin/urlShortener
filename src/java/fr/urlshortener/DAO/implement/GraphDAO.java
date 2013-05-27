@@ -36,18 +36,12 @@ import org.slf4j.LoggerFactory;
 public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterface<Data> {
 
     // Path de la base de donnée
-    private String dbPath;
+    private String dbPath; // TODO : a faire disparaitre
     // Creation d'une instance Neo4j
     private GraphDatabaseService graphDb;
-    // Creation d'une liste d'index
-    //List<Index> indexList = new ArrayList<Index>(); TODO : verifier leur utilité
-//    private static Map<String, Index> indexMap = new HashMap<String, Index>();
-    private Index<Node> nodeIndex;
     // Nom de la propriete du node
-    private String key; /* TODO : la valeur doit etre changé
+    private String key; /* TODO : a faire disparaitre
      dans la base de donnée */
-    // Nom de l'index du node
-    private String index = "nodes";
     // Log Slf4j
     private Logger logger = LoggerFactory.getLogger(GraphDAO.class);
 
@@ -87,25 +81,12 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         this.graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
         System.out.println("Base de donnée initialisé");
         // Recupere les "Fields" du java bean et contruits des index dynamiquement
-        Field[] fields = Data.class.getFields();
+        Field[] fields = Data.class.getDeclaredFields();
         for (Field field : fields) {
             System.out.println("Field : " + field.getName()); // Test
             graphDb.index().forNodes(field.getName());
-//            System.out.println("Index nomme : " + graphDb.index().forNodes(field.getName()).getName()); // Test
-//            // Si ils n'existent pas on les créent
-//            if (!graphDb.index().existsForNodes(field.getName())) { // TODO : a tester toutes cette partie!!
-//                Populate pop = new Populate(graphDb, field.getName());
-//                pop.populate();
-//            }
+            System.out.println("Index nomme : " + graphDb.index().forNodes(field.getName()).getName()); // Test
         }
-        // Version pour valoriser un string      
-        this.nodeIndex = graphDb.index().forNodes(index);
-//        String[] str = graphDb.index().nodeIndexNames();
-//        // Creation d'une liste d'index
-//        for(String indStr : str){
-//            //this.indexList.add(new GraphDatabaseFactory().newEmbeddedDatabase(dbPath).index().forNodes(indStr));
-//            this.indexMap.put(indStr, new GraphDatabaseFactory().newEmbeddedDatabase(dbPath).index().forNodes(indStr));
-//        }
     }
 
     /**
@@ -129,9 +110,10 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         Transaction tx = this.graphDb.beginTx();
         try {
             Node node = this.graphDb.getNodeById(id);
-            data.setValue(String.valueOf(node.getProperty(key)));
+            data.setValue(String.valueOf(node.getProperty(Data.class.getDeclaredField("value").getName())));
             // Signale que la transaction a reussi
             tx.success();
+            return data;
         } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : find failed");
             System.err.println("Node : find failed");
@@ -140,7 +122,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             // Cloture la transaction
             tx.finish();
         }
-        return data;
+        return null;
     }
 
     public Data create(Data obj) {
@@ -154,6 +136,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             data.setValue(String.valueOf(newNode.getProperty(key)));
             graphDb.index().forNodes(key).add(newNode, key, newNode.getProperty(key));
             tx.success();
+            return data;
         } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : Creation failed");
             System.err.println("Node : Creation failed");
@@ -163,7 +146,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             // Cloture la transaction
             tx.finish();
         }
-        return data;
+        return null;
     }
 
     public void update(Data obj) {
@@ -188,16 +171,9 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
 
         Transaction tx = graphDb.beginTx();
         try {
-            // Recherche du node par id et supression
-            if (obj.getId() != 0) {
                 Node newNode = graphDb.getNodeById(obj.getId());
                 newNode.delete();
-            } else {
-                // recherche du node par value et suppression
-                IndexHits<Node> hits = graphDb.index().forNodes(key).get(key, obj.getValue());
-                Node newNode = hits.getSingle();
-                newNode.delete();
-            }
+            
             tx.success();
         } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : Delete failed");
@@ -249,7 +225,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
      */
     public List<Data> queryList(String name, String value) {
         // ArrayList synchronized pour eviter les problemes en cas de multithreading 
-        List<Data> listData = Collections.synchronizedList(new ArrayList<Data>());
+        List<Data> listData = new ArrayList<Data>();
 
         Transaction tx = graphDb.beginTx();
 
@@ -274,7 +250,10 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         }
         return listData;
     }
-    //    public void restart() { Comment cela fonctionne t'il?
-//        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//    }
+   private Data getData(Node node){
+       return null;
+   }
+   private Node getNode(Data data, Node node){
+      return null;
+   }
 }
