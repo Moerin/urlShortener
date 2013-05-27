@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import org.apache.commons.lang3.text.WordUtils;
 
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -110,7 +112,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         Transaction tx = this.graphDb.beginTx();
         try {
             Node node = this.graphDb.getNodeById(id);
-            data.setValue(String.valueOf(node.getProperty(Data.class.getDeclaredField("value").getName())));
+            data.setValue(String.valueOf(node.getProperty(Data.class.getDeclaredField("value").getName()))); // TODO : a corriger
             // Signale que la transaction a reussi
             tx.success();
             return data;
@@ -251,9 +253,23 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         return listData;
     }
    private Data getData(Node node){
+            
        return null;
    }
    private Node getNode(Data data, Node node){
+        Field[] fields = Data.class.getDeclaredFields();
+        for (Field field : fields) {
+            try {
+                node.setProperty(field.getName(), Data.class.getMethod("get"+ WordUtils.capitalize(field.getName()) , (Class<?>[]) null));
+            } catch (NoSuchMethodException ex) {
+                java.util.logging.Logger.getLogger(GraphDAO.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (SecurityException ex) {
+                java.util.logging.Logger.getLogger(GraphDAO.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+       data.setId(newNode.getId());
+       data.setValue(String.valueOf(newNode.getProperty(key)));
+       graphDb.index().forNodes(key).add(newNode, key, newNode.getProperty(key));
       return null;
    }
 }
