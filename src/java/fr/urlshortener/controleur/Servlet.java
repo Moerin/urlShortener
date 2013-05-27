@@ -35,7 +35,7 @@ public class Servlet extends HttpServlet {
         MBeanFactory factory = MBeanFactory.getFactory();
         
         try {
-            fr.urlshortener.service.Service bean = (fr.urlshortener.service.Service) factory.getMbean(fr.urlshortener.service.Service.class);
+            fr.urlshortener.service.Request bean = (fr.urlshortener.service.Request) factory.getMbean(fr.urlshortener.service.Request.class);
             
             request.setAttribute("test", "Test : ");
             
