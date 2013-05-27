@@ -87,15 +87,17 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         this.graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
         System.out.println("Base de donnée initialisé");
         // Recupere les "Fields" du java bean et contruits des index dynamiquement
-//        Field[] fields = Data.class.getFields();
-//        for (Field field : fields) {
-//            graphDb.index().forNodes(field.getName());
+        Field[] fields = Data.class.getFields();
+        for (Field field : fields) {
+            System.out.println("Field : " + field.getName()); // Test
+            graphDb.index().forNodes(field.getName());
+//            System.out.println("Index nomme : " + graphDb.index().forNodes(field.getName()).getName()); // Test
 //            // Si ils n'existent pas on les créent
 //            if (!graphDb.index().existsForNodes(field.getName())) { // TODO : a tester toutes cette partie!!
 //                Populate pop = new Populate(graphDb, field.getName());
 //                pop.populate();
 //            }
-//        }
+        }
         // Version pour valoriser un string      
         this.nodeIndex = graphDb.index().forNodes(index);
 //        String[] str = graphDb.index().nodeIndexNames();
@@ -150,7 +152,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
             newNode.setProperty(key, obj.getValue());
             data.setId(newNode.getId());
             data.setValue(String.valueOf(newNode.getProperty(key)));
-            nodeIndex.add(newNode, key, newNode.getProperty(key));
+            graphDb.index().forNodes(key).add(newNode, key, newNode.getProperty(key));
             tx.success();
         } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : Creation failed");
@@ -192,7 +194,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
                 newNode.delete();
             } else {
                 // recherche du node par value et suppression
-                IndexHits<Node> hits = nodeIndex.get(key, obj.getValue());
+                IndexHits<Node> hits = graphDb.index().forNodes(key).get(key, obj.getValue());
                 Node newNode = hits.getSingle();
                 newNode.delete();
             }
@@ -222,7 +224,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         Transaction tx = graphDb.beginTx();
         // C'est une chaine
         try {
-            IndexHits<Node> hits = nodeIndex.get(name, value);
+            IndexHits<Node> hits = graphDb.index().forNodes(name).get(name, value);
             Node node = hits.getSingle();
             data.setId(node.getId());
             // Signale que la transaction a reussi
@@ -241,21 +243,21 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
 
     /**
      *
-     * @param obj1
-     * @param obj2
+     * @param name
+     * @param value
      * @return
      */
-    public List<Data> queryList(String obj1, String obj2) {
+    public List<Data> queryList(String name, String value) {
         // ArrayList synchronized pour eviter les problemes en cas de multithreading 
         List<Data> listData = Collections.synchronizedList(new ArrayList<Data>());
 
         Transaction tx = graphDb.beginTx();
 
-        IndexHits<Node> hits = nodeIndex.get(obj1, obj2);
+        IndexHits<Node> hits = graphDb.index().forNodes(name).get(name, value);
         try {
             for (Node node : hits) {
                 Data data = new Data();
-                data.setValue((String) node.getProperty(key));
+                data.setValue((String) node.getProperty(name));
                 listData.add(data);
             }
             // Signale que la transaction a reussi
