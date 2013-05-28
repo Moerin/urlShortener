@@ -13,9 +13,12 @@ import fr.urlshortener.populate.Populate;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -30,6 +33,7 @@ import org.neo4j.graphdb.index.IndexHits;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.security.acl.WorldGroupImpl;
 
 /**
  *
@@ -45,6 +49,7 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
     private String key; /* TODO : a faire disparaitre
      dans la base de donnée */
     // Log Slf4j
+
     private Logger logger = LoggerFactory.getLogger(GraphDAO.class);
 
     /**
@@ -132,11 +137,10 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
 
         Transaction tx = graphDb.beginTx();
         try {
-            Node newNode = graphDb.createNode();
-            newNode.setProperty(key, obj.getValue());
-            data.setId(newNode.getId());
-            data.setValue(String.valueOf(newNode.getProperty(key)));
-            graphDb.index().forNodes(key).add(newNode, key, newNode.getProperty(key));
+            Node node = getNode(data, graphDb.createNode());
+            //data.setId(node.getId());
+            data.setValue(String.valueOf(node.getProperty(key)));
+            graphDb.index().forNodes(key).add(node, key, node.getProperty(key));
             tx.success();
             return data;
         } catch (Exception e) { // TODO : identifier les vrai exceptions
@@ -173,9 +177,9 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
 
         Transaction tx = graphDb.beginTx();
         try {
-                Node newNode = graphDb.getNodeById(obj.getId());
-                newNode.delete();
-            
+            Node newNode = graphDb.getNodeById(obj.getId());
+            newNode.delete();
+
             tx.success();
         } catch (Exception e) { // TODO : identifier les vrai exceptions
             logger.warn("Node : Delete failed");
@@ -252,24 +256,25 @@ public class GraphDAO extends DAO<Data> implements ConnectInterface, QueryInterf
         }
         return listData;
     }
-   private Data getData(Node node){
-            
-       return null;
-   }
-   private Node getNode(Data data, Node node){
-        Field[] fields = Data.class.getDeclaredFields();
+
+    private Data getData(Node node) throws Exception {
+        Data aData = new Data();
+        Iterable<String> properties = node.getPropertyKeys();
+        for (String k : properties) {
+            Method aMethod = aData.getClass().getMethod("set" + WordUtils.capitalize(k), node.getProperty(k).getClass());
+            aMethod.invoke(aData, (String) node.getProperty(k));
+        }
+        return aData;
+    }
+
+    private Node getNode(Data data, Node node) throws Exception {
+        Field[] fields = data.getClass().getDeclaredFields();
         for (Field field : fields) {
-            try {
-                node.setProperty(field.getName(), Data.class.getMethod("get"+ WordUtils.capitalize(field.getName()) , (Class<?>[]) null));
-            } catch (NoSuchMethodException ex) {
-                java.util.logging.Logger.getLogger(GraphDAO.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (SecurityException ex) {
-                java.util.logging.Logger.getLogger(GraphDAO.class.getName()).log(Level.SEVERE, null, ex);
+            Method aMethod = data.getClass().getMethod("get" + WordUtils.capitalize(field.getName()), (Class<Void>[]) null);
+            if (aMethod.invoke(data) instanceof String) {
+                node.setProperty(field.getName(), (String) aMethod.invoke(data));
             }
         }
-       data.setId(newNode.getId());
-       data.setValue(String.valueOf(newNode.getProperty(key)));
-       graphDb.index().forNodes(key).add(newNode, key, newNode.getProperty(key));
-      return null;
-   }
+        return node;
+    }
 }
