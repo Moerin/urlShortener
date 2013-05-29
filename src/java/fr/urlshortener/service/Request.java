@@ -13,7 +13,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
+import javax.annotation.PreDestroy;
 
 import org.vostok.management.annotations.MBean;
 
@@ -23,49 +23,43 @@ import org.vostok.management.annotations.MBean;
  */
 @MBean
 public class Request {
-
+    
+    private Data data;
+    
     private Configuration config = new Configuration();
+    
+    DAO<Data> dataAccess; // TODO : trouver ou le mettre car ce n'est pas lui qui doit s'en occuper
 
-    public void configuration(String adress){
+    public void configuration(String adress) { // TODO : Autre service a s'en occuper
         config.setPath(adress);
     }
-    public String find(String id){
-        //Data data = new Data();
-        
+
+    public Data find(String id) {
         Long convertId = Long.parseLong(id);
-        
-        //data.setId(convertId);
-        
-        DAO<Data> dataAccess = new GraphDAO(config);
-        
-        Data data = dataAccess.find(convertId);
-        
-        return data.getValue();
+        data = dataAccess.find(convertId);
+        return data;
     }
 
-    public String operation() {
-
-        Data data = new Data();
-        data.setId(4000);
-        
-        Configuration config = new Configuration();
-        config.setPath("path"); // Path a entrer
-        
-        DAO<Data> dataAccess = new GraphDAO(config);
-        
-        dataAccess.start();
-        
-        Data dataJsp = dataAccess.find(data.getId());
-        
-        dataAccess.stop();
-        
-        //return test;
-        return dataJsp.getValue();
+    public String query(String name, String value) {
+        data = dataAccess.querySingle(name, value);
+        return data.getValue();
+    }
+    
+    public void create(Data data){
+        dataAccess.create(data);
     }
 
     @PostConstruct
     public void loading() {
         Logger.getLogger(Request.class
                 .getName()).log(Level.INFO, "MBean {} is running... ", Request.class.getName());
+        config.setPath("path"); // TODO : Autre service a s'en occuper
+        dataAccess = new GraphDAO(config);
+        dataAccess.start();
+    }
+
+    @PreDestroy
+    public void unloading() {
+        dataAccess.stop();
     }
 }
